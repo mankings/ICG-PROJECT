@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "cannon-es-debugger": "^1.0.0",
+    "three": "^0.151.3",
+    "three-js-csg": "^72.0.0"
+  },
+  "devDependencies": {
+    "vite": "^4.2.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  }
+}
