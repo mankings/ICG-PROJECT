@@ -6,7 +6,7 @@
     "three-js-csg": "^72.0.0"
   },
   "devDependencies": {
-    "vite": "^4.2.1"
+    "vite": "^4.2.2"
   },
   "scripts": {
     "dev": "vite",
