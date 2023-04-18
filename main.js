@@ -70,7 +70,7 @@ function init() {
 
     let fov = 70;
     camera = new THREE.PerspectiveCamera(fov, width / height, 1, 5000);
-    camera.position.set(0, 0, -10);
+    camera.position.set(0, 20, 0);
 
     sky();
     // starDome();
@@ -81,8 +81,8 @@ function init() {
     spotLight.position.set(0, 0, 1000);
     scene.add(spotLight);
 
-    const axesHelper = new THREE.AxesHelper(100);
-    scene.add(axesHelper);
+    const axesHelper = new THREE.AxesHelper(1000);
+    // scene.add(axesHelper);
 
     world = new CANNON.World({
         gravity: new CANNON.Vec3(0, 0, 0), // because space
@@ -90,7 +90,7 @@ function init() {
 
     // debugRenderer = CannonDebugger(scene, world);
 
-    // controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
 
     renderer.localClippingEnabled = true;
 
@@ -189,7 +189,10 @@ function mancosmico() {
 
     player = new Spaceship();
     scene.add(player.mesh);
+    scene.add(player.trail);
     world.addBody(player.body);
+
+    player.body.position.set(0, 0, 1);
 }
 
 function thirdPersonCamera() {
@@ -215,9 +218,10 @@ function animate() {
     sceneGraph["artemis"].update();
     sceneGraph["hades"].update();
 
-    thirdPersonCamera();
+    // thirdPersonCamera();
+    camera.lookAt(player.mesh.position.x, player.mesh.position.y, player.mesh.position.z);
+    
     world.step(timeStep);
-
     renderer.render(scene, camera);
     // debugRenderer.update();
 

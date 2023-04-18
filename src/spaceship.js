@@ -16,6 +16,7 @@ export default class Spaceship {
     constructor() {
         this.body = this.makeBody();
         this.mesh = this.makeMesh();
+        this.trail = this.makeTrail();
     }
 
     makeMesh() {
@@ -124,7 +125,7 @@ export default class Spaceship {
             });
 
             mesh = new THREE.Mesh(geo, mat);
-            
+
             const scale = 1 - i / 10;
             mesh.scale.set(scale, scale, 1);
 
@@ -243,13 +244,62 @@ export default class Spaceship {
         return body;
     }
 
-    update(keyboard) {
-        this.move(keyboard);
-        this.renderTrail();
+    makeTrail() {
+        let particleGeometry = new THREE.BufferGeometry();
+
+        // Create an array of particle positions
+        var particlePositions = new Float32Array(1000 * 3);
+
+        for (var i = 0; i < 1000; i++) {
+            // Set the x, y, and z coordinates for the particle
+            var x = 0;
+            var y = 0;
+            var z = 0;
+            particlePositions[i * 3 + 0] = x;
+            particlePositions[i * 3 + 1] = y;
+            particlePositions[i * 3 + 2] = z;
+        }
+
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+        var particleMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.1
+        });
+
+        var particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+        return particleSystem;
     }
 
-    renderTrail() {
+    update(keyboard) {
+        this.move(keyboard);
+        // this.animateTrail();
+    }
 
+    animateTrail() {
+        // Get the particle positions from the buffer geometry
+        var positions = this.trail.geometry.attributes.position.array;
+
+        for (var i = 0; i < 1000; i++) {
+
+            // Assign a random speed to the particle
+            var speed = Math.random() * 0.5;
+
+            // Move the particle in the -z direction at the random speed
+            positions[i * 3 + 2] -= speed;
+
+            //expanding on x and y axis
+            // Check if the particle has reached the reset point
+            if (positions[i * 3 + 2] < this.mesh.position.z - 10) {
+                // Reset the particle back to its starting position
+                positions[i * 3 + 0] = this.mesh.position.x;
+                positions[i * 3 + 1] = this.mesh.position.y;
+                positions[i * 3 + 2] = this.mesh.position.z - 3;
+            }
+        }
+
+        // Update the particle positions in the buffer geometry
+        this.trail.geometry.attributes.position.newedsUpdate = true;
     }
 
     move(keyboard) {
