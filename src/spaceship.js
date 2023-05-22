@@ -16,7 +16,6 @@ export default class Spaceship {
     constructor() {
         this.body = this.makeBody();
         this.mesh = this.makeMesh();
-        this.trail = this.makeTrail();
     }
 
     makeMesh() {
@@ -230,7 +229,7 @@ export default class Spaceship {
     }
 
     makeBody() {
-        const shape = new CANNON.Box(new CANNON.Vec3(1.75, 1.1, 3.5));
+        const shape = new CANNON.Sphere(4);
         const body = new CANNON.Body({
             mass: 5,
             linearDamping: 0.4,
@@ -318,7 +317,7 @@ export default class Spaceship {
 
         // boost
         if (keyboard[KEYS.W] && keyboard[KEYS.SPACE]) {
-            force = new CANNON.Vec3(0, 0, speed * 2);
+            force = new CANNON.Vec3(0, 0, speed * 3);
             time = 1;
             applyPoint = new CANNON.Vec3(0, 0, -3);
             impulse = force.scale(time);

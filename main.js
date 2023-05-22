@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import Spaceship from './src/spaceship.js';
 import Planet from './src/planet.js';
 import CannonDebugger from 'cannon-es-debugger'
+import Asteroid from './src/asteroid.js';
 
 var KEYS = {
     "W": 87,
@@ -44,7 +44,7 @@ function onWindowResize() {
 let renderer, camera, scene, controls;
 let sceneGraph = {};
 let player, world;
-let stardome;
+const playRadius = 800;
 
 var debugRenderer;
 
@@ -72,13 +72,11 @@ function init() {
     camera = new THREE.PerspectiveCamera(fov, width / height, 1, 5000);
     camera.position.set(0, 20, 0);
 
-    sky();
     // starDome();
-
-    const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.2);
+    const ambientLight = new THREE.AmbientLight('rgb(255, 255, 255)', 0.25);
     scene.add(ambientLight);
     const spotLight = new THREE.SpotLight('rgb(255, 255, 255)', 0.8);
-    spotLight.position.set(0, 0, 1000);
+    spotLight.position.set(0, 1000, 10000);
     scene.add(spotLight);
 
     const axesHelper = new THREE.AxesHelper(1000);
@@ -88,9 +86,9 @@ function init() {
         gravity: new CANNON.Vec3(0, 0, 0), // because space
     });
 
-    // debugRenderer = CannonDebugger(scene, world);
+    debugRenderer = CannonDebugger(scene, world);
 
-    controls = new OrbitControls(camera, renderer.domElement);
+    // controls = new OrbitControls(camera, renderer.domElement);
 
     renderer.localClippingEnabled = true;
 
@@ -158,41 +156,99 @@ function starDome() {
     scene.add(stardome);
 }
 
+function asteroidRing(num, inner, outer, center) {
+    // meshes
+    const ring = new THREE.Group();
+    const asteroids = [];
+    for (let i = 0; i < num; i++) {
+        const innerRadius = inner;
+        const outerRadius = outer;
+
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.sqrt(Math.random() * (outerRadius * outerRadius - innerRadius * innerRadius) + innerRadius * innerRadius);
+    
+        const radius = Math.floor(Math.random() * 7) + 3;
+        const x = Math.cos(angle) * distance;
+        const y = Math.random() * 8 - 4;
+        const z = Math.sin(angle) * distance;
+
+        var shade = Math.floor(Math.random() * 256);
+        var hex = shade.toString(16);
+        if (hex.length < 2) hex = "0" + hex;
+        var color = "#" + hex + hex + hex;
+
+        var asteroid = new Asteroid(new THREE.Vector3(x, y, z), radius, color);
+        ring.add(asteroid.mesh);
+        asteroids.push(asteroid);
+    }
+
+    ring.position.set(center.x, center.y, center.z);
+    scene.add(ring);
+
+    return ring;
+}
+
+function playArea(radius) {
+    const bodies = [];
+    const circleCenter = new CANNON.Vec3(0, 0, 0);
+    const circleRadius = radius;
+    const numBodies = 50;
+
+    const angleStep = (2 * Math.PI) / numBodies;
+
+    for (let i = 0; i < numBodies; i++) {
+        var angle = i * angleStep;
+        var x = circleCenter.x + circleRadius * Math.cos(angle);
+        var z = circleCenter.z + circleRadius * Math.sin(angle);
+
+        var body = new CANNON.Body({
+            mass: 0,
+            position: new CANNON.Vec3(x, 0, z),
+            shape: new CANNON.Box(new CANNON.Vec3(50, 4, 4)),
+        });
+        var direction = circleCenter.vsub(body.position);
+        body.quaternion.setFromVectors(new CANNON.Vec3(0, 0, 1), direction);
+        world.addBody(body);
+        bodies.push(body);
+    }
+}
+
 function mancosmico() {
-    // demeter - rings and one moon
-    var demeter = new Planet(50, new THREE.Vector3(100, 0, 150), 0xaaaaff, 0.0004);
+    // asteroid rings
+    var ring1 = asteroidRing(1500, 800, 900, new THREE.Vector3(0, 0, 0));
+    sceneGraph["ring1"] = ring1;
+    var ring2 = asteroidRing(1000, 420, 550, new THREE.Vector3(0, -50, 0));
+    sceneGraph["ring2"] = ring2;
+    var ring3 = asteroidRing(550, 110, 260, new THREE.Vector3(0, -70, 0));
+    sceneGraph["ring3"] = ring3;
+
+    // demeter - ring and a moon
+    var demeter = new Planet(50, new THREE.Vector3(475, 0, 475), 0xaaaaff, 0.0004, "./texture/jup0vss1.jpg");
     demeter.addParticleRing(70, 100, Math.PI / 6, 5000, 0xffffff);
     demeter.addParticleRing(80, 90, Math.PI / 6, 2000, 0xffffff);
-    var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.003);
+    var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.002, "./texture/earth.jpg");
     moon.system.rotateZ(-0.2);
     world.addBody(moon.body);
     demeter.addMoon(moon);
     touchOfGod(demeter, "demeter");
 
-    // lots of moons
-    var artemis = new Planet(30, new THREE.Vector3(200, 0, -320), 0xaaffaa, -0.0009);
-    artemis.addParticleRing(45, 55, 2 * Math.PI / 6, 5000, 0xffaa55);
-    artemis.addParticleRing(40, 50, Math.PI / 6, 5000, 0xffaa11);
-    touchOfGod(artemis, "artemis");
+    // // lots of moons
+    // var artemis = new Planet(30, new THREE.Vector3(170, 0, -170), 0xaaffaa, -0.0009, "./texture/jup1vss2.jpg");
+    // artemis.addParticleRing(45, 55, 2 * Math.PI / 6, 5000, 0xffaa55);
+    // artemis.addParticleRing(40, 50, Math.PI / 6, 5000, 0xffaa11);
+    // touchOfGod(artemis, "artemis");
 
     // big planet - 2 moons
-    var hades = new Planet(150, new THREE.Vector3(-300, 0, -500), 0x880000, 0.0009);
-    var moon = new Planet(25, new THREE.Vector3(-180, 0, 200), 0xaaaaaa, 0.004);
-    moon.system.rotateZ(1);
-    world.addBody(moon.body);
-    hades.addMoon(moon);
-    moon = new Planet(17, new THREE.Vector3(170, 0, 180), 0x441111, -0.004);
-    moon.system.rotateZ(0.3);
-    world.addBody(moon.body);
-    hades.addMoon(moon);
+    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, 0.0003, "./texture/jup3vss2.jpg");
     touchOfGod(hades, "hades");
+}
 
+function initplayer() {
     player = new Spaceship();
     scene.add(player.mesh);
-    scene.add(player.trail);
     world.addBody(player.body);
 
-    player.body.position.set(0, 0, 1);
+    player.body.position.set(0, 0, 0);
 }
 
 function thirdPersonCamera() {
@@ -206,7 +262,7 @@ function thirdPersonCamera() {
     cameraLookat.applyQuaternion(player.mesh.getWorldQuaternion(q))
     cameraLookat.add(player.mesh.position)
 
-    const step = 0.15;
+    const step = 0.17;
     camera.position.lerp(cameraOffset, step)
     camera.lookAt(cameraLookat)
 }
@@ -215,19 +271,27 @@ const timeStep = 1 / 60;
 function animate() {
     player.update(keyboard);
     sceneGraph["demeter"].update();
-    sceneGraph["artemis"].update();
+    // sceneGraph["artemis"].update();
     sceneGraph["hades"].update();
 
-    // thirdPersonCamera();
-    camera.lookAt(player.mesh.position.x, player.mesh.position.y, player.mesh.position.z);
-    
+    sceneGraph["ring1"].rotateY(-0.0003);
+    sceneGraph["ring2"].rotateY(0.00003);
+    sceneGraph["ring3"].rotateY(-0.0003);
+
+    thirdPersonCamera();
+
     world.step(timeStep);
     renderer.render(scene, camera);
     // debugRenderer.update();
+
+    // console.log(player.body.position);
 
     window.requestAnimationFrame(animate);
 }
 
 init();
+sky();
 mancosmico();
+playArea(playRadius);
+initplayer();
 animate();

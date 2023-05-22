@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 
 export default class Planet {
-    constructor(radius, position, color, speed) {
+    constructor(radius, position, color, speed, textureFile) {
         this.body = this.makeBody(radius, position);
-        this.mesh = this.makeMesh(radius, color);
+        this.mesh = this.makeMesh(radius, color, textureFile);
         this.system = this.makeSystem();
 
         this.rings = [];
@@ -30,16 +30,27 @@ export default class Planet {
     makeSystem() {
         const system = new THREE.Object3D();
         system.add(this.mesh);
+        system.rotateX(- Math.PI / 16);
         return system;
     }
 
-    makeMesh(radius, color) {
+    makeBody(radius, position) {
+        const shape = new CANNON.Sphere(radius);
+        const body = new CANNON.Body({ mass: 0 });
+        body.addShape(shape);
+        body.position.copy(position);
+        
+        return body;
+    }
+
+    makeMesh(radius, color, textureFile) {
         const planet = new THREE.Object3D();
-        var shape, geo, mat, mesh;
+        var shape, geo, mat, mesh, tex;
 
         // ball
         geo = new THREE.SphereGeometry(radius, 32, 32);
-        mat = new THREE.MeshPhongMaterial({ color: color });
+        tex = new THREE.TextureLoader().load(textureFile);
+        mat = new THREE.MeshPhongMaterial({ map: tex });
         mesh = new THREE.Mesh(geo, mat);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -78,16 +89,5 @@ export default class Planet {
         const moon = planet;
         this.moons.push(moon);
         this.mesh.add(planet.system);
-    }
-
-    makeBody(radius, position) {
-        const shape = new CANNON.Sphere(radius);
-        const body = new CANNON.Body({
-            mass: 0,
-        });
-        body.addShape(shape);
-
-        body.position.copy(position)
-        return body;
     }
 }
