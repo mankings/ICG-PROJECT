@@ -272,43 +272,43 @@ function playArea(radius) {
 
 function mancosmico() {
     // asteroid rings
-    var ring1 = asteroidRing(1300, 810, 910, new THREE.Vector3(0, 0, 0));
+    var ring1 = asteroidRing(1000, 810, 910, new THREE.Vector3(0, 0, 0));
     sceneGraph["ring1"] = ring1;
-    var ring2 = asteroidRing(700, 420, 550, new THREE.Vector3(0, -50, 0));
+    var ring2 = asteroidRing(500, 420, 550, new THREE.Vector3(0, -50, 0));
     sceneGraph["ring2"] = ring2;
-    var ring3 = asteroidRing(380, 140, 260, new THREE.Vector3(0, -70, 0));
+    var ring3 = asteroidRing(300, 140, 260, new THREE.Vector3(0, -70, 0));
     sceneGraph["ring3"] = ring3;
 
     // demeter - ring and a moon
-    var demeter = new Planet(50, new THREE.Vector3(475, 0, 475), 0xaaaaff, 0.0004, "./texture/jup0vss1.jpg");
+    var demeter = new Planet(50, new THREE.Vector3(475, 0, 475), 0xaaaaff, 0.0004, "/texture/jup0vss1.jpg");
     demeter.system.rotateX(- Math.PI / 16);
     demeter.addParticleRing(70, 100, Math.PI / 6, 1500, 0xffffff);
     demeter.addParticleRing(80, 90, Math.PI / 6, 3200, 0xffffff);
-    var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.002, "./texture/earth.jpg");
+    var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.002, "/texture/earth.jpg");
     moon.system.rotateZ(-0.2);
     world.addBody(moon.body);
     demeter.addMoon(moon);
     touchOfGod(demeter, "demeter");
 
     // big planet - 2 moons
-    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "./texture/jup3vss2.jpg");
+    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "/texture/jup3vss2.jpg");
     hades.system.rotateX(- Math.PI / 13);
     hades.system.rotateZ(- Math.PI / 8);
     touchOfGod(hades, "hades");
 
     // o zanzarino
-    var zaza = new Planet(1200, new THREE.Vector3(-3000, 0, -3000), 0x112233, -0.0004, "./texture/plu0rss1.jpg")
+    var zaza = new Planet(1200, new THREE.Vector3(-3000, 0, -3000), 0x112233, -0.0004, "/texture/plu0rss1.jpg")
     zaza.system.rotateX(3 * Math.PI / 13);
     zaza.system.rotateZ(-2 * Math.PI / 10);
     touchOfGod(zaza, "zaza")
 
     // o paulo pinto
-    var pp = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "./texture/orange.jpg")
+    var pp = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "/texture/orange.jpg")
     pp.addParticleRing(115, 125, Math.PI / 6, 1500, 0x666666);
     pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xaa3344);
     pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xffffff);
     pp.system.rotateX(- Math.PI / 6);
-    pp.system.rotateY(Math.PI / 2);
+    pp.system.rotateY(2 * Math.PI / 6);
     touchOfGod(pp, "pp")
 
     // black hole in the middle
@@ -324,13 +324,12 @@ function initplayer() {
 
     player.body.position.set(30, 0, -200);
     player.body.addEventListener("collide", handlePlayerCollision);
-
 }
 
 function thirdPersonCamera() {
     const q = new THREE.Quaternion()
 
-    const cameraOffset = new THREE.Vector3(-7, 10, -25)
+    const cameraOffset = new THREE.Vector3(0, 10, -25)
     cameraOffset.applyQuaternion(player.mesh.getWorldQuaternion(q))
     cameraOffset.add(player.mesh.position)
 
@@ -370,10 +369,12 @@ function initGUI() {
     
     const points = document.createElement("p");
     points.textContent = "Points: " + player.points.toString();
+    points.className = "txt";
     guiElement.appendChild(points);
     
     const health = document.createElement("p");
     health.textContent = "Health: " + player.health.toString();
+    health.className = "txt";
     guiElement.appendChild(health);
     
     document.body.appendChild(guiElement);
@@ -422,7 +423,7 @@ function gameplayLoop() {
         bullet.body.force.set(0, 0, 0);
         bullet.body.torque.set(0, 0, 0);
         
-        const distance = 4.8;  
+        const distance = 5;
         const direction = new THREE.Vector3(0, 0, 1);
         direction.applyQuaternion(player.mesh.quaternion);
         
@@ -430,7 +431,7 @@ function gameplayLoop() {
         bullet.body.position.copy(pointInFront);
 
         const playerSpeed = player.body.velocity.length()
-        const speed = playerSpeed > 30 ? playerSpeed * 1.2 : 30;
+        const speed = playerSpeed > 25 ? playerSpeed * 1.2 : 30;
         var force = direction.multiplyScalar(speed);
         bullet.body.applyLocalImpulse(force);
     }
