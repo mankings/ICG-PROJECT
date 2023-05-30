@@ -311,7 +311,7 @@ function mancosmico() {
     pailance.addParticleRing(100, 140, Math.PI / 6, 4000, 0xaa3344);
     pailance.addParticleRing(100, 140, Math.PI / 6, 4000, 0xffffff);
     pailance.system.rotateX(- Math.PI / 6);
-    pailance.system.rotateY(2 * Math.PI / 6);
+    pailance.system.rotateY(4 * Math.PI / 6);
     touchOfGod(pailance, "pailance");
 
     // a 
