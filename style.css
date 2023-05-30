@@ -3,3 +3,13 @@ body {
 	margin: 0px;
 	overflow: hidden;
 }
+
+.guiElement {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	font-family: Impact, 'Arial Narrow Bold', sans-serif;
+	color: white;
+	padding: 0px 10px;
+	font-size: 20px;
+}

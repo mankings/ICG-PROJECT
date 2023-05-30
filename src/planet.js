@@ -30,7 +30,6 @@ export default class Planet {
     makeSystem() {
         const system = new THREE.Object3D();
         system.add(this.mesh);
-        system.rotateX(- Math.PI / 16);
         return system;
     }
 

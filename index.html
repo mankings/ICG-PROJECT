@@ -10,6 +10,26 @@
 <body>
     <script type="module" src="/main.js"></script>
     <div id="manquisse"></div>
+
+    <!-- Vertex shader code -->
+    <script id="blackHoleVertexShader" type="x-shader/x-vertex">
+        varying vec3 vertexNormal;
+        
+        void main() {
+            vertexNormal = normalize(normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    </script>
+
+    <!-- Fragment shader code -->
+    <script id="blackHoleFragmentShader" type="x-shader/x-fragment">
+        varying vec3 vertexNormal;
+        
+        void main() {
+            float intensity = pow(1.0, 3.0);
+            gl_FragColor = vec4(0.47, 0.04, 1.0, 0.44) * intensity;
+        }
+  </script>
 </body>
 
 </html>

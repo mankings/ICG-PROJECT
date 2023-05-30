@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { GUI } from 'dat.gui'
 import { Sky } from 'three/addons/objects/Sky.js';
 import Spaceship from './src/spaceship.js';
 import Planet from './src/planet.js';
 import CannonDebugger from 'cannon-es-debugger'
+import BlackHole from './src/blackHole.js';
 import Asteroid from './src/asteroid.js';
+import Bullet from './src/bullet.js';
+
 
 var KEYS = {
     "W": 87,
@@ -41,12 +45,28 @@ function onWindowResize() {
 }
 
 // mancósmico
-let renderer, camera, scene, controls;
+let renderer, camera, scene, controls, gui, guiDiv, music;
 let sceneGraph = {};
 let player, world;
-const playRadius = 800;
+let spawnCooldown = 50;
 
-var debugRenderer;
+const playRadius = 800;
+const asteroids = [], maxAsteroids = 100;
+var nextAsteroid = 0;
+
+const bullets = [], maxBullets = 50;
+var nextBullet = 0;
+
+var frameCounter = 0;
+
+
+const settings = {
+    "sound": false,
+    "soundVolume": 0.5,
+    "spawnCooldown": 50,
+}
+
+var debugRenderer = null;
 
 function touchOfGod(object, key) {
     if (key) sceneGraph[key] = object;
@@ -65,6 +85,7 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(width, height);
+    renderer.localClippingEnabled = true;
     const htmlElement = document.querySelector("#manquisse");
     htmlElement.appendChild(renderer.domElement);
 
@@ -86,11 +107,40 @@ function init() {
         gravity: new CANNON.Vec3(0, 0, 0), // because space
     });
 
-    debugRenderer = CannonDebugger(scene, world);
-
     // controls = new OrbitControls(camera, renderer.domElement);
 
-    renderer.localClippingEnabled = true;
+    world.addEventListener("collide", handleMeteorCollision);
+    debugRenderer = new CannonDebugger(scene, world);
+
+
+    const listener = new THREE.AudioListener();
+    camera.add(listener);
+
+    music = new THREE.Audio(listener);
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load('/around_the_world.mp3', function (buffer) {
+        music.setBuffer(buffer);
+        music.setLoop(true);
+        music.setVolume(0.5);
+    });
+
+    for (let i = 0; i < maxAsteroids; i++) {
+        const asteroid = new Asteroid(new THREE.Vector3(5 * i, -10000, 0), 0xb32280);
+        asteroids.push(asteroid);
+        scene.add(asteroid.mesh);
+        world.addBody(asteroid.body);
+        asteroid.body.addEventListener("collide", handleMeteorCollision);
+        asteroid.body.sleep();
+    }
+
+    for (let i = 0; i < maxBullets; i++) {
+        const bullet = new Bullet(new THREE.Vector3(5 * i, -90000, 0), 0xb32280);
+        bullets.push(bullet);
+        scene.add(bullet.mesh);
+        world.addBody(bullet.body);
+        bullet.body.addEventListener("collide", handleBulletCollision);
+        bullet.body.sleep();
+    }
 
     window.addEventListener("resize", () => onWindowResize(), false);
 }
@@ -159,15 +209,14 @@ function starDome() {
 function asteroidRing(num, inner, outer, center) {
     // meshes
     const ring = new THREE.Group();
-    const asteroids = [];
     for (let i = 0; i < num; i++) {
         const innerRadius = inner;
         const outerRadius = outer;
 
         const angle = Math.random() * 2 * Math.PI;
         const distance = Math.sqrt(Math.random() * (outerRadius * outerRadius - innerRadius * innerRadius) + innerRadius * innerRadius);
-    
-        const radius = Math.floor(Math.random() * 7) + 3;
+
+        const radius = Math.floor(Math.random() * 6) + 6;
         const x = Math.cos(angle) * distance;
         const y = Math.random() * 8 - 4;
         const z = Math.sin(angle) * distance;
@@ -177,9 +226,16 @@ function asteroidRing(num, inner, outer, center) {
         if (hex.length < 2) hex = "0" + hex;
         var color = "#" + hex + hex + hex;
 
-        var asteroid = new Asteroid(new THREE.Vector3(x, y, z), radius, color);
-        ring.add(asteroid.mesh);
-        asteroids.push(asteroid);
+        var geo, mat, mesh;
+        geo = new THREE.IcosahedronGeometry(radius, 0);
+        mat = new THREE.MeshPhongMaterial({ color: new THREE.Color(color) });
+        mesh = new THREE.Mesh(geo, mat);
+        mesh.receiveShadow = true;
+
+        mesh.position.set(x, y, z);
+        mesh.rotation.set(Math.random(), Math.random(), Math.random());
+
+        ring.add(mesh);
     }
 
     ring.position.set(center.x, center.y, center.z);
@@ -208,6 +264,7 @@ function playArea(radius) {
         });
         var direction = circleCenter.vsub(body.position);
         body.quaternion.setFromVectors(new CANNON.Vec3(0, 0, 1), direction);
+        body.collisionFilterGroup = 4;
         world.addBody(body);
         bodies.push(body);
     }
@@ -215,32 +272,49 @@ function playArea(radius) {
 
 function mancosmico() {
     // asteroid rings
-    var ring1 = asteroidRing(1500, 800, 900, new THREE.Vector3(0, 0, 0));
+    var ring1 = asteroidRing(1300, 810, 910, new THREE.Vector3(0, 0, 0));
     sceneGraph["ring1"] = ring1;
-    var ring2 = asteroidRing(1000, 420, 550, new THREE.Vector3(0, -50, 0));
+    var ring2 = asteroidRing(700, 420, 550, new THREE.Vector3(0, -50, 0));
     sceneGraph["ring2"] = ring2;
-    var ring3 = asteroidRing(550, 110, 260, new THREE.Vector3(0, -70, 0));
+    var ring3 = asteroidRing(380, 140, 260, new THREE.Vector3(0, -70, 0));
     sceneGraph["ring3"] = ring3;
 
     // demeter - ring and a moon
     var demeter = new Planet(50, new THREE.Vector3(475, 0, 475), 0xaaaaff, 0.0004, "./texture/jup0vss1.jpg");
-    demeter.addParticleRing(70, 100, Math.PI / 6, 5000, 0xffffff);
-    demeter.addParticleRing(80, 90, Math.PI / 6, 2000, 0xffffff);
+    demeter.system.rotateX(- Math.PI / 16);
+    demeter.addParticleRing(70, 100, Math.PI / 6, 1500, 0xffffff);
+    demeter.addParticleRing(80, 90, Math.PI / 6, 3200, 0xffffff);
     var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.002, "./texture/earth.jpg");
     moon.system.rotateZ(-0.2);
     world.addBody(moon.body);
     demeter.addMoon(moon);
     touchOfGod(demeter, "demeter");
 
-    // // lots of moons
-    // var artemis = new Planet(30, new THREE.Vector3(170, 0, -170), 0xaaffaa, -0.0009, "./texture/jup1vss2.jpg");
-    // artemis.addParticleRing(45, 55, 2 * Math.PI / 6, 5000, 0xffaa55);
-    // artemis.addParticleRing(40, 50, Math.PI / 6, 5000, 0xffaa11);
-    // touchOfGod(artemis, "artemis");
-
     // big planet - 2 moons
-    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, 0.0003, "./texture/jup3vss2.jpg");
+    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "./texture/jup3vss2.jpg");
+    hades.system.rotateX(- Math.PI / 13);
+    hades.system.rotateZ(- Math.PI / 8);
     touchOfGod(hades, "hades");
+
+    // o zanzarino
+    var zaza = new Planet(1200, new THREE.Vector3(-3000, 0, -3000), 0x112233, -0.0004, "./texture/plu0rss1.jpg")
+    zaza.system.rotateX(3 * Math.PI / 13);
+    zaza.system.rotateZ(-2 * Math.PI / 10);
+    touchOfGod(zaza, "zaza")
+
+    // o paulo pinto
+    var pp = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "./texture/orange.jpg")
+    pp.addParticleRing(115, 125, Math.PI / 6, 1500, 0x666666);
+    pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xaa3344);
+    pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xffffff);
+    pp.system.rotateX(- Math.PI / 6);
+    pp.system.rotateY(Math.PI / 2);
+    touchOfGod(pp, "pp")
+
+    // black hole in the middle
+    var blackHole = new BlackHole(new THREE.Vector3(0, 0, 0), 80, 0xb32280);
+    scene.add(blackHole.mesh);
+    world.addBody(blackHole.body);
 }
 
 function initplayer() {
@@ -248,7 +322,9 @@ function initplayer() {
     scene.add(player.mesh);
     world.addBody(player.body);
 
-    player.body.position.set(0, 0, 0);
+    player.body.position.set(30, 0, -200);
+    player.body.addEventListener("collide", handlePlayerCollision);
+
 }
 
 function thirdPersonCamera() {
@@ -262,31 +338,168 @@ function thirdPersonCamera() {
     cameraLookat.applyQuaternion(player.mesh.getWorldQuaternion(q))
     cameraLookat.add(player.mesh.position)
 
-    const step = 0.17;
+    const step = 0.17
     camera.position.lerp(cameraOffset, step)
     camera.lookAt(cameraLookat)
 }
 
+function settingsReloader() {
+    if (settings.sound)
+        music.play();
+    else music.pause();
+
+    music.setVolume(settings.soundVolume);
+    spawnCooldown = settings.spawnCooldown;
+}
+
+function initGUI() {
+    const gui = new GUI();
+    const worldFolder = gui.addFolder("Configuration");
+    worldFolder.add(settings, "sound", false).onChange(settingsReloader);
+    worldFolder.add(settings, "soundVolume", 0, 1).onChange(settingsReloader);
+    worldFolder.add(settings, "spawnCooldown", 10, 10000).onChange(settingsReloader);
+
+    const playerFolder = gui.addFolder("Player");
+    // playerFolder.add(player, "speed", 0, 100);
+    worldFolder.open();
+    playerFolder.open();
+
+    const guiElement = document.createElement("div");
+    guiElement.id = "guiElement";
+    guiElement.className = "guiElement";
+    
+    const points = document.createElement("p");
+    points.textContent = "Points: " + player.points.toString();
+    guiElement.appendChild(points);
+    
+    const health = document.createElement("p");
+    health.textContent = "Health: " + player.health.toString();
+    guiElement.appendChild(health);
+    
+    document.body.appendChild(guiElement);
+    guiDiv = guiElement;
+}
+
+function updateGUI() {
+    guiDiv.children[0].textContent = "Points: " + player.points.toString();
+    guiDiv.children[1].textContent = "Health: " + player.health.toString();
+}
+
 const timeStep = 1 / 60;
 function animate() {
-    player.update(keyboard);
     sceneGraph["demeter"].update();
-    // sceneGraph["artemis"].update();
     sceneGraph["hades"].update();
+    sceneGraph["zaza"].update();
+    sceneGraph["pp"].update();
 
     sceneGraph["ring1"].rotateY(-0.0003);
     sceneGraph["ring2"].rotateY(0.00003);
     sceneGraph["ring3"].rotateY(-0.0003);
 
-    thirdPersonCamera();
+    for (let i = 0; i < asteroids.length; i++)
+        asteroids[i].update();
+
+    for (let i = 0; i < bullets.length; i++)
+        bullets[i].update();
 
     world.step(timeStep);
     renderer.render(scene, camera);
-    // debugRenderer.update();
 
+    updateGUI();
+    thirdPersonCamera();
+    gameplayLoop();
+
+    // if (debugRenderer) debugRenderer.update();
     // console.log(player.body.position);
 
     window.requestAnimationFrame(animate);
+}
+
+function gameplayLoop() {
+    if (player.update(keyboard, frameCounter) == true) {
+        const bullet = bullets[nextBullet++ % maxBullets];
+        bullet.body.wakeUp();
+        bullet.body.force.set(0, 0, 0);
+        bullet.body.torque.set(0, 0, 0);
+        
+        const distance = 4.8;  
+        const direction = new THREE.Vector3(0, 0, 1);
+        direction.applyQuaternion(player.mesh.quaternion);
+        
+        const pointInFront = player.mesh.position.clone().add(direction.multiplyScalar(distance));
+        bullet.body.position.copy(pointInFront);
+
+        const playerSpeed = player.body.velocity.length()
+        const speed = playerSpeed > 30 ? playerSpeed * 1.2 : 30;
+        var force = direction.multiplyScalar(speed);
+        bullet.body.applyLocalImpulse(force);
+    }
+
+    if (frameCounter % spawnCooldown == 0) {
+        var angle = Math.random() * 2 * Math.PI;
+        var dist = Math.random() * 1 + 70;
+        var x = dist * Math.cos(angle);
+        var z = dist * Math.sin(angle);
+
+        const asteroid = asteroids[nextAsteroid++ % maxAsteroids];
+        asteroid.body.position.set(x, 0, z);
+        asteroid.body.wakeUp();
+    }
+    frameCounter++;
+}
+
+// coliision detection
+function handlePlayerCollision(event) {
+    var body1 = event.body;
+    var body2 = event.target;
+
+    if (
+        body1.collisionFilterGroup == 2 && body2.collisionFilterGroup == 3 ||
+        body2.collisionFilterGroup == 2 && body1.collisionFilterGroup == 3
+    ) {
+        player.hit();
+    }
+}
+
+function handleMeteorCollision(event) {
+    var body1 = event.body;
+    var body2 = event.target;
+
+    if (
+        body1.collisionFilterGroup == 3 && body2.collisionFilterGroup != 4 ||
+        body2.collisionFilterGroup == 3 && body1.collisionFilterGroup != 4) 
+    {
+        var asteroid, body;
+
+        if (body1.collisionFilterGroup == 3) {
+            asteroid = body1;
+            body = body2;
+        } else {
+            body = body1;
+            asteroid = body2;
+        }
+
+        if(body.collisionFilterGroup != 2) {
+            asteroid.sleep();
+            asteroid.position.set(0, 10000, 0);
+            if (body.collisionFilterGroup == 6) {
+                player.points++;
+            }
+        }
+    }
+}
+
+function handleBulletCollision(event) {
+    var bullet;
+    if (event.body.collisionFilterGroup == 2 || event.target.collisionFilterGroup == 2) return;
+    if(event.body.collisionFilterGroup == 6) {
+        bullet = event.body;
+    } else if (event.target.collisionFilterGroup == 6){
+        bullet = event.target;
+    } else return;
+
+    bullet.sleep();
+    bullet.position.set(0, 10000, 0);
 }
 
 init();
@@ -294,4 +507,5 @@ sky();
 mancosmico();
 playArea(playRadius);
 initplayer();
+initGUI();
 animate();
