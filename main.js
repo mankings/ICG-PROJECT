@@ -66,7 +66,7 @@ const settings = {
     "spawnCooldown": 50,
     "playerSpeed": 5,
     "playerMaxSpeed": 50,
-    "playerShootCooldown": 10,
+    "playerShootCooldown": 5,
 }
 
 var debugRenderer = null;
