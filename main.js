@@ -79,7 +79,7 @@ function init() {
     const height = window.innerHeight;
 
     scene = new THREE.Scene();
-    const backgroundTexture = new THREE.TextureLoader().load("/background.jpg");
+    const backgroundTexture = new THREE.TextureLoader().load("./background.jpg");
     scene.background = backgroundTexture;
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -118,7 +118,7 @@ function init() {
 
     music = new THREE.Audio(listener);
     const audioLoader = new THREE.AudioLoader();
-    audioLoader.load('/around_the_world.mp3', function (buffer) {
+    audioLoader.load('./around_the_world.mp3', function (buffer) {
         music.setBuffer(buffer);
         music.setLoop(true);
         music.setVolume(0.5);
@@ -280,30 +280,30 @@ function mancosmico() {
     sceneGraph["ring3"] = ring3;
 
     // demeter - ring and a moon
-    var demeter = new Planet(50, new THREE.Vector3(475, 0, 475), 0xaaaaff, 0.0004, "/texture/jup0vss1.jpg");
+    var demeter = new Planet(50, new THREE.Vector3(475, 0, 475), 0xaaaaff, 0.0004, "./texture/jup0vss1.jpg");
     demeter.system.rotateX(- Math.PI / 16);
     demeter.addParticleRing(70, 100, Math.PI / 6, 1500, 0xffffff);
     demeter.addParticleRing(80, 90, Math.PI / 6, 3200, 0xffffff);
-    var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.002, "/texture/earth.jpg");
+    var moon = new Planet(10, new THREE.Vector3(-20, 0, -80), 0xfff000, 0.002, "./texture/earth.jpg");
     moon.system.rotateZ(-0.2);
     world.addBody(moon.body);
     demeter.addMoon(moon);
     touchOfGod(demeter, "demeter");
 
     // big planet - 2 moons
-    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "/texture/jup3vss2.jpg");
+    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "./texture/jup3vss2.jpg");
     hades.system.rotateX(- Math.PI / 13);
     hades.system.rotateZ(- Math.PI / 8);
     touchOfGod(hades, "hades");
 
     // o zanzarino
-    var zaza = new Planet(1200, new THREE.Vector3(-3000, 0, -3000), 0x112233, -0.0004, "/texture/plu0rss1.jpg")
+    var zaza = new Planet(1200, new THREE.Vector3(-3000, 0, -3000), 0x112233, -0.0004, "./texture/plu0rss1.jpg")
     zaza.system.rotateX(3 * Math.PI / 13);
     zaza.system.rotateZ(-2 * Math.PI / 10);
     touchOfGod(zaza, "zaza")
 
     // o paulo pinto
-    var pp = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "/texture/orange.jpg")
+    var pp = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "./texture/orange.jpg")
     pp.addParticleRing(115, 125, Math.PI / 6, 1500, 0x666666);
     pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xaa3344);
     pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xffffff);
