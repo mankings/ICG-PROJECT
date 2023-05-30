@@ -65,8 +65,8 @@ const settings = {
     "soundVolume": 0.5,
     "spawnCooldown": 50,
     "playerSpeed": 5,
-    "playerMaxSpeed": 50,
-    "playerShootCooldown": 5,
+    "playerMaxSpeed": 100,
+    "playerShootCooldown": 10,
 }
 
 var debugRenderer = null;
