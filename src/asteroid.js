@@ -47,12 +47,12 @@ export default class Asteroid {
         const body = new CANNON.Body({
             mass: 1,
             position: position,
-            shape: new CANNON.Box(new CANNON.Vec3(4.2, 4.2, 4.2)),
+            shape: new CANNON.Box(new CANNON.Vec3(5, 5, 5)),
         });
         body.collisionFilterGroup = 3;
         body.angularFactor.set(0.1, 0.1, 0.1);
 
-        body.linearFactor.set(1, 0, 1);
+        body.linearFactor.set(0.5, 0, 0.5);
 
         body.position.copy(position);
         return body;

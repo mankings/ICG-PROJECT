@@ -64,6 +64,9 @@ const settings = {
     "sound": false,
     "soundVolume": 0.5,
     "spawnCooldown": 50,
+    "playerSpeed": 5,
+    "playerMaxSpeed": 50,
+    "playerShootCooldown": 10,
 }
 
 var debugRenderer = null;
@@ -290,26 +293,28 @@ function mancosmico() {
     demeter.addMoon(moon);
     touchOfGod(demeter, "demeter");
 
-    // big planet - 2 moons
-    var hades = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "./texture/jup3vss2.jpg");
-    hades.system.rotateX(- Math.PI / 13);
-    hades.system.rotateZ(- Math.PI / 8);
-    touchOfGod(hades, "hades");
+    // a presi - 2 moons
+    var presi = new Planet(900, new THREE.Vector3(-3333, 0, 3333), 0x880000, -0.0003, "./texture/jup3vss2.jpg");
+    presi.system.rotateX(- Math.PI / 13);
+    presi.system.rotateZ(- Math.PI / 8);
+    touchOfGod(presi, "presi");
 
     // o zanzarino
     var zaza = new Planet(1200, new THREE.Vector3(-3000, 0, -3000), 0x112233, -0.0004, "./texture/plu0rss1.jpg")
     zaza.system.rotateX(3 * Math.PI / 13);
     zaza.system.rotateZ(-2 * Math.PI / 10);
-    touchOfGod(zaza, "zaza")
+    touchOfGod(zaza, "zaza");
 
-    // o paulo pinto
-    var pp = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "./texture/orange.jpg")
-    pp.addParticleRing(115, 125, Math.PI / 6, 1500, 0x666666);
-    pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xaa3344);
-    pp.addParticleRing(100, 140, Math.PI / 6, 4000, 0xffffff);
-    pp.system.rotateX(- Math.PI / 6);
-    pp.system.rotateY(2 * Math.PI / 6);
-    touchOfGod(pp, "pp")
+    // o pailance
+    var pailance = new Planet(70, new THREE.Vector3(480, 0, -480), 0x000fff, -0.0006, "./texture/orange.jpg")
+    pailance.addParticleRing(115, 125, Math.PI / 6, 1500, 0x666666);
+    pailance.addParticleRing(100, 140, Math.PI / 6, 4000, 0xaa3344);
+    pailance.addParticleRing(100, 140, Math.PI / 6, 4000, 0xffffff);
+    pailance.system.rotateX(- Math.PI / 6);
+    pailance.system.rotateY(2 * Math.PI / 6);
+    touchOfGod(pailance, "pailance");
+
+    // a 
 
     // black hole in the middle
     var blackHole = new BlackHole(new THREE.Vector3(0, 0, 0), 80, 0xb32280);
@@ -349,49 +354,69 @@ function settingsReloader() {
 
     music.setVolume(settings.soundVolume);
     spawnCooldown = settings.spawnCooldown;
+    player.speed = settings.playerSpeed;
+    player.maxSpeed = settings.playerMaxSpeed;
+    player.shootDelay = settings.shootDelay;
 }
 
 function initGUI() {
     const gui = new GUI();
+
     const worldFolder = gui.addFolder("Configuration");
     worldFolder.add(settings, "sound", false).onChange(settingsReloader);
     worldFolder.add(settings, "soundVolume", 0, 1).onChange(settingsReloader);
     worldFolder.add(settings, "spawnCooldown", 10, 10000).onChange(settingsReloader);
 
     const playerFolder = gui.addFolder("Player");
-    // playerFolder.add(player, "speed", 0, 100);
+    playerFolder.add(settings, "playerSpeed", 0, 20).onChange(settingsReloader);
+    playerFolder.add(settings, "playerMaxSpeed", 30, 690).onChange(settingsReloader);
+    // playerFolder.add(settings, "playerShootCooldown", 5, 100).onChange(settingsReloader);
+;
+
     worldFolder.open();
     playerFolder.open();
 
     const guiElement = document.createElement("div");
-    guiElement.id = "guiElement";
-    guiElement.className = "guiElement";
+    guiElement.className = "guiElement info";
     
-    const points = document.createElement("p");
-    points.textContent = "Points: " + player.points.toString();
-    points.className = "txt";
-    guiElement.appendChild(points);
-    
-    const health = document.createElement("p");
-    health.textContent = "Health: " + player.health.toString();
-    health.className = "txt";
-    guiElement.appendChild(health);
+    const gameInfo = document.createElement("p");
+    gameInfo.className = "txt";
+    guiElement.appendChild(gameInfo);
     
     document.body.appendChild(guiElement);
     guiDiv = guiElement;
+
+    const controlsInfo = document.createElement("div");
+    controlsInfo.className = "controlsInfo info";
+
+    const controlsInfoText = document.createElement("p");
+    controlsInfoText.className = "txt";
+    controlsInfoText.textContent = "WASD - move";
+    controlsInfo.appendChild(controlsInfoText);
+    
+    const constrolsInfoText2 = document.createElement("p");
+    constrolsInfoText2.className = "txt";
+    constrolsInfoText2.textContent = "Space - shoot";
+    controlsInfo.appendChild(constrolsInfoText2);
+
+    const controlsInfoText3 = document.createElement("p");
+    controlsInfoText3.className = "txt";
+    controlsInfoText3.textContent = "Shift - boost";
+    controlsInfo.appendChild(controlsInfoText3);
+
+    document.body.appendChild(controlsInfo);
 }
 
 function updateGUI() {
-    guiDiv.children[0].textContent = "Points: " + player.points.toString();
-    guiDiv.children[1].textContent = "Health: " + player.health.toString();
+    guiDiv.children[0].textContent = "Points " + player.points.toString() + " - " + player.health.toString() + " Health";
 }
 
 const timeStep = 1 / 60;
 function animate() {
     sceneGraph["demeter"].update();
-    sceneGraph["hades"].update();
+    sceneGraph["presi"].update();
     sceneGraph["zaza"].update();
-    sceneGraph["pp"].update();
+    sceneGraph["pailance"].update();
 
     sceneGraph["ring1"].rotateY(-0.0003);
     sceneGraph["ring2"].rotateY(0.00003);
@@ -430,15 +455,15 @@ function gameplayLoop() {
         const pointInFront = player.mesh.position.clone().add(direction.multiplyScalar(distance));
         bullet.body.position.copy(pointInFront);
 
-        const playerSpeed = player.body.velocity.length()
-        const speed = playerSpeed > 25 ? playerSpeed * 1.2 : 30;
+        const playerSpeed = player.body.velocity.length();
+        const speed = playerSpeed > 50 ? playerSpeed * 1.2 : 60;
         var force = direction.multiplyScalar(speed);
         bullet.body.applyLocalImpulse(force);
     }
 
     if (frameCounter % spawnCooldown == 0) {
         var angle = Math.random() * 2 * Math.PI;
-        var dist = Math.random() * 1 + 70;
+        var dist = Math.random() * 1 + 79;
         var x = dist * Math.cos(angle);
         var z = dist * Math.sin(angle);
 

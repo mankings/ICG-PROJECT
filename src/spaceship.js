@@ -17,6 +17,10 @@ export default class Spaceship {
         this.body = this.makeBody();
         this.mesh = this.makeMesh();
 
+        this.shootDelay = 10;
+        this.maxSpeed = 100;
+        this.speed = 5;
+
         this.health = 10;
         this.points = 0;
         this.lastShot = 0;
@@ -241,7 +245,7 @@ export default class Spaceship {
     }
 
     makeBody() {
-        const shape = new CANNON.Sphere(4);
+        const shape = new CANNON.Sphere(3.5);
         const body = new CANNON.Body({
             mass: 5,
             linearDamping: 0.4,
@@ -316,7 +320,6 @@ export default class Spaceship {
     }
 
     move(keyboard, frameCount) {
-        const speed = 5;
         const turnSpeed = 0.8;
         
         const lineardamp = 0.4;
@@ -324,15 +327,11 @@ export default class Spaceship {
         const linearstop = 0.7;
         const angularstop = 0.9;
 
-        const drag = 0.2;
-        
         var force, impulse, time, applyPoint;
 
-        const shootDelay = 10;
-        
         // forward
-        if (keyboard[KEYS.W]) {
-            force = new CANNON.Vec3(0, 0, speed);
+        if (keyboard[KEYS.W] && this.body.velocity.length() < this.maxSpeed) {
+            force = new CANNON.Vec3(0, 0, this.speed);
             time = 1;
             applyPoint = new CANNON.Vec3(0, 0, -3);
             this.body.applyLocalImpulse(force, applyPoint, time);
@@ -348,8 +347,8 @@ export default class Spaceship {
         }
 
         // boost
-        if (keyboard[KEYS.W] && keyboard[KEYS.SHIFT]) {
-            force = new CANNON.Vec3(0, 0, speed * 3);
+        if (keyboard[KEYS.W] && keyboard[KEYS.SHIFT] && this.body.velocity.length() < this.maxSpeed) {
+            force = new CANNON.Vec3(0, 0, this.speed * 3);
             time = 1;
             applyPoint = new CANNON.Vec3(0, 0, -3);
             impulse = force.scale(time);
@@ -363,7 +362,7 @@ export default class Spaceship {
             applyPoint = new CANNON.Vec3(2, 0, -3);
             this.body.applyLocalImpulse(force, applyPoint, time);
 
-            force = new CANNON.Vec3(0, 0, turnSpeed * 0.5);
+            force = new CANNON.Vec3(0, 0, turnSpeed * 0.7);
             time = 0.5;
             applyPoint = new CANNON.Vec3(2, 0, 0);
             this.body.applyLocalImpulse(force, applyPoint, time);
@@ -375,7 +374,7 @@ export default class Spaceship {
             applyPoint = new CANNON.Vec3(-2, 0, -3);
             this.body.applyLocalImpulse(force, applyPoint, time);
 
-            force = new CANNON.Vec3(0, 0, turnSpeed * 0.5);
+            force = new CANNON.Vec3(0, 0, turnSpeed * 0.7);
             time = 0.5;
             applyPoint = new CANNON.Vec3(-2, 0, 0);
             this.body.applyLocalImpulse(force, applyPoint, time);
@@ -385,7 +384,7 @@ export default class Spaceship {
         this.mesh.quaternion.copy(this.body.quaternion);
 
         if (keyboard[KEYS.SPACE]) {
-            if (frameCount > this.lastShot + shootDelay) {
+            if (frameCount > this.lastShot + this.shootDelay) {
                 this.lastShot = frameCount;
                 return true;
             }
