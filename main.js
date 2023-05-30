@@ -356,7 +356,7 @@ function settingsReloader() {
     spawnCooldown = settings.spawnCooldown;
     player.speed = settings.playerSpeed;
     player.maxSpeed = settings.playerMaxSpeed;
-    player.shootDelay = settings.shootDelay;
+    player.shootDelay = settings.playerShootCooldown;
 }
 
 function initGUI() {
@@ -370,8 +370,7 @@ function initGUI() {
     const playerFolder = gui.addFolder("Player");
     playerFolder.add(settings, "playerSpeed", 0, 20).onChange(settingsReloader);
     playerFolder.add(settings, "playerMaxSpeed", 30, 690).onChange(settingsReloader);
-    // playerFolder.add(settings, "playerShootCooldown", 5, 100).onChange(settingsReloader);
-;
+    playerFolder.add(settings, "playerShootCooldown", 5, 100).onChange(settingsReloader);
 
     worldFolder.open();
     playerFolder.open();
